@@ -16,6 +16,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
+
 /**
  * A simple {@link Fragment} subclass.
  * create an instance of this fragment.
@@ -28,24 +30,33 @@ public class SingleThreadFragment extends Fragment {
 //    private Count count;
     boolean is_start = false;
     int upnum=0;
-    private Handler handler=new Handler(){
+    private MyHandler handler;
+    private static class MyHandler extends Handler{
+        private final WeakReference<Fragment> mFragmentReference;
+        MyHandler(Fragment fragment){
+            mFragmentReference = new WeakReference<>(fragment);
+        }
+
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
+            final SingleThreadFragment fragment = (SingleThreadFragment)mFragmentReference.get();
             switch (msg.what){
                 case CountUp.COUNTUPFLAG:
-                    if (upnum<=1000){
-                        text.setText(""+upnum++);
+                    if (fragment.upnum<=1000){
+                        fragment.text.setText(""+fragment.upnum++);
                     }
                     else {
-                        count.exit = true;
-                        is_start = false;
-                        btnStart.setText("开始");
+                        fragment.count.exit = true;
+                        fragment.is_start = false;
+                        fragment.btnStart.setText("开始");
                     }
                     break;
             }
         }
-    };
+    }
+
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -61,6 +72,7 @@ public class SingleThreadFragment extends Fragment {
 //        CountUp countUp = new CountUp();
         btnStart = (Button) getView().findViewById(R.id.btn_start);
         btnReturn = (Button) getView().findViewById(R.id.btn_return);
+        handler = new MyHandler(this);
         btnStart.setOnClickListener(v->{
             if (!is_start) {
                 count = new CountUp(handler);
@@ -86,24 +98,6 @@ public class SingleThreadFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (count!=null) count.exit = true;
+        handler.removeCallbacksAndMessages(null);
     }
-//    public class Count extends Thread {
-//        public volatile boolean exit = false;
-//        public static final int COUNTUPFLAG = 0xFF01;
-//        @Override
-//        public void run() {
-//            while(!exit){
-//                try{
-//                    Log.e("AAA","AAA");
-//                    Message msg = new Message();
-//                    msg.what = COUNTUPFLAG;
-//                    handler.sendMessage(msg);
-//                    Thread.sleep(500);
-//                }
-//                catch (Exception e){
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//    }
 }

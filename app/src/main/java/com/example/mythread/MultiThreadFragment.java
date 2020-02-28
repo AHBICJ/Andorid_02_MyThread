@@ -31,34 +31,43 @@ public class MultiThreadFragment extends Fragment {
     private CountDown down;
     private int upnum=0,downnum=1000;
     boolean is_start = false;
-    private Handler handler = new Handler(){
+    private MyHandler handler;
+    private static class MyHandler extends Handler{
+        private final WeakReference<Fragment> mFragmentReference;
+        MyHandler(Fragment fragment){
+            mFragmentReference = new WeakReference<>(fragment);
+        }
+
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
-            switch (msg.what){
-                case CountDown.COUNTDOWNFLAG:
-                    if (downnum>=0){
-                        countDown.setText(""+downnum--);
-                    }
-                    else{
-                        down.exit = true;
-                    }
-                    break;
-                case CountUp.COUNTUPFLAG:
-                    if (upnum<=1000){
-                        countUp.setText(""+upnum++);
-                    }
-                    else {
-                        up.exit = true;
-                    }
-                    break;
-            }
-            if (down.exit && up.exit){
-                is_start = false;
-                btnStart.setText("开始");
+            final MultiThreadFragment fragment = (MultiThreadFragment)mFragmentReference.get();
+            if (fragment!=null){
+                switch (msg.what){
+                    case CountDown.COUNTDOWNFLAG:
+                        if (fragment.downnum>=0){
+                            fragment.countDown.setText(""+fragment.downnum--);
+                        }
+                        else{
+                            fragment.down.exit = true;
+                        }
+                        break;
+                    case CountUp.COUNTUPFLAG:
+                        if (fragment.upnum<=1000){
+                            fragment.countUp.setText(""+fragment.upnum++);
+                        }
+                        else {
+                            fragment.up.exit = true;
+                        }
+                        break;
+                }
+                if (fragment.down.exit && fragment.up.exit){
+                    fragment.is_start = false;
+                    fragment.btnStart.setText("开始");
+                }
             }
         }
-    };
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -72,11 +81,10 @@ public class MultiThreadFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         countUp = (TextView) getView().findViewById(R.id.countUp);
         countDown = (TextView) getView().findViewById(R.id.countDown);
-
-
         btnStart = (Button) getView().findViewById(R.id.btn_start);
+        btnReturn = (Button) getView().findViewById(R.id.btn_return);
+        handler= new MyHandler(this);
         btnStart.setOnClickListener(v->{
-
             if (!is_start) {
                 up = new CountUp(handler);
                 down = new CountDown(handler);
@@ -92,7 +100,6 @@ public class MultiThreadFragment extends Fragment {
                 btnStart.setText("开始");
             }
         });
-        btnReturn = (Button) getView().findViewById(R.id.btn_return);
         btnReturn.setOnClickListener(v->{
             // stop thread
             if (down!=null) down.exit = true;
@@ -107,5 +114,6 @@ public class MultiThreadFragment extends Fragment {
         super.onDestroyView();
         if (down!=null) down.exit = true;
         if (up!=null) up.exit = true;
+        handler.removeCallbacksAndMessages(null);
     }
 }

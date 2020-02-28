@@ -15,7 +15,7 @@ public class CountUp extends Thread {
     public void run() {
         while(!exit){
             try{
-                Log.e("AAA","AAA");
+//                Log.e("AAA","AAA");
                 Message msg = new Message();
                 msg.what = COUNTUPFLAG;
                 handler.sendMessage(msg);
